@@ -11,19 +11,24 @@ function cargarMapa() {
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=iniciarMapa`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=iniciarMapa&libraries=marker`;
     script.async = true;
     script.defer = true;
     document.body.appendChild(script);
 }
 
-cargarMapa(); // Llamamos a la función para cargar el script de Google Maps
+// Llamar a la función para cargar la API de Google Maps
+let infoWindow;
+
+cargarMapa();
+//const { AdvancedMarkerElement, PinElement } = new google.maps.importLibrary("marker");
 
 function iniciarMapa() {
     const coordenadas = { lat: 43.4751, lng: -3.8078 }; 
     const mapa = new google.maps.Map(document.getElementById("map"), {
         zoom: 12,
         center: coordenadas,
+        mapId: "DEMO_MAP_ID"
     });
 
     new google.maps.Marker({
@@ -31,6 +36,11 @@ function iniciarMapa() {
         map: mapa,
         title: "Ubicación de ejemplo",
     });
+
+    // Ejemplo: Añadir más puntos de interés
+    agregarPuntoDeInteres(mapa, 43.472511, -3.781207, "Playa del Sardinero");
+    agregarPuntoDeInteres(mapa, 43.469433, -3.766479, "Palacio de la Magdalena");
+    agregarPuntoDeInteres(mapa, 43.476249, -3.793371, "Casino de Santander");
 
     // Botón para buscar ubicación actual
     const locationButton = document.createElement("button");
@@ -76,5 +86,25 @@ function iniciarMapa() {
         } else {
             alert("Geolocalización no soportada en este navegador.");
         }
+    });
+}
+
+// Función para agregar puntos de interés
+function agregarPuntoDeInteres(mapa, lat, lng, titulo) {
+    const marcador = new google.maps.marker.AdvancedMarkerElement({
+        position: { lat, lng },
+        map: mapa,
+        title: titulo,
+    });
+
+    // Evento click para mostrar InfoWindow
+    marcador.addListener("gmp-click", () => { // Cambiado de 'click' a 'gmp-click'
+        if (!infoWindow) {
+            infoWindow = new google.maps.InfoWindow();
+        }
+
+        infoWindow.close();
+        infoWindow.setContent(`<h3>${titulo}</h3><p>Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>`);
+        infoWindow.open(mapa, marcador);
     });
 }
