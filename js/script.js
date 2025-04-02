@@ -1,8 +1,9 @@
 
+
 const params = new Proxy(new URLSearchParams(window.location.search), {
     get: (searchParams, prop) => searchParams.get(prop),
-  });
-  // Get the value of "some_key" in eg "https://example.com/?some_key=some_value"
+});
+// Get the value of "some_key" in eg "https://example.com/?some_key=some_value"
 const api_key = params.some_key; // "some_value"
 const accessKey = params.accessKey;
 const secretKey = params.secretKey;
@@ -27,7 +28,7 @@ cargarMapa();
 //const { AdvancedMarkerElement, PinElement } = new google.maps.importLibrary("marker");
 
 function iniciarMapa() {
-    const coordenadas = { lat: 43.4751, lng: -3.8078 }; 
+    const coordenadas = { lat: 43.4751, lng: -3.8078 };
     const mapa = new google.maps.Map(document.getElementById("map"), {
         zoom: 12,
         center: coordenadas,
@@ -115,7 +116,7 @@ function agregarPuntoDeInteres(mapa, lat, lng, titulo) {
 }
 
 
-function cargarPuntosVuforia(){
+function cargarPuntosVuforia() {
     let targetIds = traerTargetIds();
 
     console.log(targetIds);
@@ -123,7 +124,7 @@ function cargarPuntosVuforia(){
 }
 
 function traerTargetIds() {
-    const url = 'https://cors-anywhere.herokuapp.com/https://vws.vuforia.com/targets';
+    const url = 'https://chronostreetturist.msob523.workers.dev/?https://vws.vuforia.com/targets';
     let targetIds = [];
 
     const httpVerb = "GET";
@@ -133,23 +134,25 @@ function traerTargetIds() {
     const requestPath = "/targets";
 
     const stringToSign = httpVerb + "\n" +
-                         md5 + "\n" +
-                         contentType + "\n" +
-                         date + "\n" +
-                         requestPath;
-    
+        md5 + "\n" +
+        contentType + "\n" +
+        date + "\n" +
+        requestPath;
+
     const signature = generarHMAC(stringToSign, secretKey);
 
     //header `Authorization`
     const authorizationHeader = `VWS ${accessKey}:${signature}`;
 
-    /*
+
     const xhr = new XMLHttpRequest();
-    
+
     xhr.open("GET", url);
-    xhr.setRequestHeader("Host", "vws.vuforia.com");
-    xhr.setRequestHeader("Date", date);
+    //xhr.setRequestHeader("Host", "vws.vuforia.com");
+    //xhr.setRequestHeader("Date", date);
     xhr.setRequestHeader("Authorization", authorizationHeader);
+    console.log(authorizationHeader);
+    console.log(date);
     xhr.send();
     xhr.responseType = "json";
     xhr.onload = () => {
@@ -157,16 +160,17 @@ function traerTargetIds() {
             const data = xhr.response;
             targetIds = data.results;
             console.log(data);
+            console.log(xhr.HEADERS_RECEIVED);
         } else {
             console.log(`Error: ${xhr.status}`);
         }
-    };*/
+    };/*
     fetch(url, {
         method: "GET",
         headers: {
-            "Host": "vws.vuforia.com", // No puedes establecer este encabezado manualmente, pero fetch lo maneja por sí mismo
-            "Date": date,              // Similar a "Host", este encabezado lo maneja fetch automáticamente
-            "Authorization": authorizationHeader
+            'Host': 'vws.vuforia.com',
+            'Date': date,
+            'Authorization': authorizationHeader
         }
     })
     .then(response => {
@@ -183,34 +187,13 @@ function traerTargetIds() {
     .catch(error => {
         console.log(error);
     });
-    
+    */
 
     return targetIds;
 }
 
+
 function generarHMAC(stringToSign, secretKey) {
-    function generarHMAC(stringToSign, secretKey) {
-        const encoder = new TextEncoder();
-        const keyData = encoder.encode(secretKey);
-    
-        // Importar la clave de manera asincrónica
-        return window.crypto.subtle.importKey(
-            "raw", keyData, { name: "HMAC", hash: { name: "SHA-1" } }, false, ["sign"]
-        )
-        .then((key) => {
-            // Firmar de manera asincrónica
-            return window.crypto.subtle.sign(
-                "HMAC", key, encoder.encode(stringToSign)
-            );
-        })
-        .then((signatureBuffer) => {
-            const signatureArray = new Uint8Array(signatureBuffer);
-            const signatureBase64 = btoa(String.fromCharCode.apply(null, signatureArray));
-            return signatureBase64;
-        })
-        .catch((error) => {
-            console.error("Error al generar HMAC:", error);
-        });
-    }
-    
+    return CryptoJS.HmacSHA1(stringToSign, secretKey).toString(CryptoJS.enc.Base64);
 }
+
