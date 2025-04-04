@@ -1,4 +1,57 @@
+async function cargarPuntosVuforia() {
+    let listaPuntos = [];
 
+    const myHeaders = new Headers();
+    myHeaders.append("Access", accessKey);
+    myHeaders.append("Secret", secretKey);
+
+    const requestOptions = {
+        method: "GET",
+        headers: myHeaders,
+        redirect: "follow"
+    };
+
+    fetch("https://vuforia-chrono.msob523.workers.dev/", requestOptions)
+        .then((response) => response.json())
+        .then((result) => {
+            listaPuntos = result.targets;
+            console.log("Lista dentro del .then():", listaPuntos);
+            for (let i = 0; i < listaPuntos.length; i++) {
+                let punto = listaPuntos[i];
+                console.log("Procesando punto:", punto);
+        
+                punto.replace("_", ".");
+                let longitud = "";
+                let latitud = "";
+                let nombre = "";
+                let parte = 0;
+                for(let j = 0; j < punto.length; j++) {
+                    if (parte == 0) {
+                        if (j > 0 && punto[j] == "-") {
+                            parte++;
+                        } else {
+                            longitud += punto[j];
+                        }
+                    } else if (parte == 1) {
+                        if (punto[j] == "-") {
+                            parte++;
+                        } else {
+                            latitud += punto[j];
+                        }
+                    } else if (parte == 2) {
+                        nombre += punto[j];
+                    }
+                }
+        
+                console.log("Longitud:", longitud, "Latitud:", latitud, "Nombre:", nombre);
+            }
+            return listaPuntos;
+        })
+        .catch((error) => {
+            console.error(error);
+        });
+
+}
 
 const params = new Proxy(new URLSearchParams(window.location.search), {
     get: (searchParams, prop) => searchParams.get(prop),
@@ -42,6 +95,38 @@ function iniciarMapa() {
     });
 
     cargarPuntosVuforia();
+
+    /*cargarPuntosVuforia().then((listaPuntos) => {
+        console.log(listaPuntos);
+        for (let i = 0; i < listaPuntos.length; i++) {
+            let punto = listaPuntos[i];
+            console.log("Procesando punto:", punto);
+
+            let partes = punto.split("-");
+
+            if (partes.length < 3) {
+                console.warn("Formato incorrecto en punto:", punto);
+                continue;
+            }
+
+            // Manejo de longitud y latitud
+            let longitud = partes[0].replace(/\./g, "_");
+            let latitud = partes[1].replace(/\./g, "_");
+
+            // Si hay "--", significa que la latitud es negativa
+            if (punto.includes("--")) {
+                latitud = "-" + latitud.replace("_", ""); // Elimina el primer "_"
+            }
+
+            // El nombre está después de la latitud
+            let nombre = partes.slice(2).join("-");
+
+            // Insertar espacio antes de letras mayúsculas, excepto la primera
+            nombre = nombre.replace(/([a-z])([A-Z])/g, "$1 $2");
+
+            console.log("Longitud:", longitud, "Latitud:", latitud, "Nombre:", nombre);
+        }
+    });*/
 
     // Ejemplo: Añadir más puntos de interés
     agregarPuntoDeInteres(mapa, 43.472511, -3.781207, "Playa del Sardinero");
@@ -116,84 +201,5 @@ function agregarPuntoDeInteres(mapa, lat, lng, titulo) {
 }
 
 
-function cargarPuntosVuforia() {
-    let targetIds = traerTargetIds();
 
-    console.log(targetIds);
-
-}
-
-function traerTargetIds() {
-    const url = 'https://chronostreetturist.msob523.workers.dev/?https://vws.vuforia.com/targets';
-    let targetIds = [];
-
-    const httpVerb = "GET";
-    const md5 = "d41d8cd98f00b204e9800998ecf8427e"; //al ser una peticion sin body
-    const contentType = "";
-    const date = new Date().toUTCString();
-    const requestPath = "/targets";
-
-    const stringToSign = httpVerb + "\n" +
-        md5 + "\n" +
-        contentType + "\n" +
-        date + "\n" +
-        requestPath;
-
-    const signature = generarHMAC(stringToSign, secretKey);
-
-    //header `Authorization`
-    const authorizationHeader = `VWS ${accessKey}:${signature}`;
-
-
-    const xhr = new XMLHttpRequest();
-
-    xhr.open("GET", url);
-    //xhr.setRequestHeader("Host", "vws.vuforia.com");
-    //xhr.setRequestHeader("Date", date);
-    xhr.setRequestHeader("Authorization", authorizationHeader);
-    console.log(authorizationHeader);
-    console.log(date);
-    xhr.send();
-    xhr.responseType = "json";
-    xhr.onload = () => {
-        if (xhr.readyState == 4 && xhr.status == 200) {
-            const data = xhr.response;
-            targetIds = data.results;
-            console.log(data);
-            console.log(xhr.HEADERS_RECEIVED);
-        } else {
-            console.log(`Error: ${xhr.status}`);
-        }
-    };/*
-    fetch(url, {
-        method: "GET",
-        headers: {
-            'Host': 'vws.vuforia.com',
-            'Date': date,
-            'Authorization': authorizationHeader
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();  // Parsear la respuesta a JSON
-        } else {
-            throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }
-    })
-    .then(data => {
-        targetIds = data.results;
-        console.log(data);
-    })
-    .catch(error => {
-        console.log(error);
-    });
-    */
-
-    return targetIds;
-}
-
-
-function generarHMAC(stringToSign, secretKey) {
-    return CryptoJS.HmacSHA1(stringToSign, secretKey).toString(CryptoJS.enc.Base64);
-}
 
