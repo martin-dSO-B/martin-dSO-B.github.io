@@ -1,3 +1,4 @@
+let mapa;
 async function cargarPuntosVuforia() {
     let listaPuntos = [];
 
@@ -17,10 +18,9 @@ async function cargarPuntosVuforia() {
             listaPuntos = result.targets;
             console.log("Lista dentro del .then():", listaPuntos);
             for (let i = 0; i < listaPuntos.length; i++) {
-                let punto = listaPuntos[i];
+                let punto = listaPuntos[i].replaceAll("_", ".");
                 console.log("Procesando punto:", punto);
         
-                punto.replace("_", ".");
                 let longitud = "";
                 let latitud = "";
                 let nombre = "";
@@ -33,7 +33,7 @@ async function cargarPuntosVuforia() {
                             longitud += punto[j];
                         }
                     } else if (parte == 1) {
-                        if (punto[j] == "-") {
+                        if (punto[j] == "-" && punto[j-1] != "-") {
                             parte++;
                         } else {
                             latitud += punto[j];
@@ -42,8 +42,8 @@ async function cargarPuntosVuforia() {
                         nombre += punto[j];
                     }
                 }
-        
-                console.log("Longitud:", longitud, "Latitud:", latitud, "Nombre:", nombre);
+                agregarPuntoDeInteres(mapa, parseFloat(longitud), parseFloat(latitud), nombre);
+                //console.log("Longitud:", longitud, "Latitud:", latitud, "Nombre:", nombre);
             }
             return listaPuntos;
         })
@@ -82,7 +82,7 @@ cargarMapa();
 
 function iniciarMapa() {
     const coordenadas = { lat: 43.4751, lng: -3.8078 };
-    const mapa = new google.maps.Map(document.getElementById("map"), {
+    mapa = new google.maps.Map(document.getElementById("map"), {
         zoom: 12,
         center: coordenadas,
         mapId: "DEMO_MAP_ID"
@@ -95,43 +95,6 @@ function iniciarMapa() {
     });
 
     cargarPuntosVuforia();
-
-    /*cargarPuntosVuforia().then((listaPuntos) => {
-        console.log(listaPuntos);
-        for (let i = 0; i < listaPuntos.length; i++) {
-            let punto = listaPuntos[i];
-            console.log("Procesando punto:", punto);
-
-            let partes = punto.split("-");
-
-            if (partes.length < 3) {
-                console.warn("Formato incorrecto en punto:", punto);
-                continue;
-            }
-
-            // Manejo de longitud y latitud
-            let longitud = partes[0].replace(/\./g, "_");
-            let latitud = partes[1].replace(/\./g, "_");
-
-            // Si hay "--", significa que la latitud es negativa
-            if (punto.includes("--")) {
-                latitud = "-" + latitud.replace("_", ""); // Elimina el primer "_"
-            }
-
-            // El nombre está después de la latitud
-            let nombre = partes.slice(2).join("-");
-
-            // Insertar espacio antes de letras mayúsculas, excepto la primera
-            nombre = nombre.replace(/([a-z])([A-Z])/g, "$1 $2");
-
-            console.log("Longitud:", longitud, "Latitud:", latitud, "Nombre:", nombre);
-        }
-    });*/
-
-    // Ejemplo: Añadir más puntos de interés
-    agregarPuntoDeInteres(mapa, 43.472511, -3.781207, "Playa del Sardinero");
-    agregarPuntoDeInteres(mapa, 43.469433, -3.766479, "Palacio de la Magdalena");
-    agregarPuntoDeInteres(mapa, 43.476249, -3.793371, "Casino de Santander");
 
     // Botón para buscar ubicación actual
     const locationButton = document.createElement("button");
