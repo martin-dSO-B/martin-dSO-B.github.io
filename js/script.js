@@ -24,6 +24,7 @@ async function cargarPuntosVuforia() {
                 let longitud = "";
                 let latitud = "";
                 let nombre = "";
+                let imagen = "";
                 let parte = 0;
                 for(let j = 0; j < punto.length; j++) {
                     if (parte == 0) {
@@ -39,10 +40,16 @@ async function cargarPuntosVuforia() {
                             latitud += punto[j];
                         }
                     } else if (parte == 2) {
-                        nombre += punto[j];
+                        if (punto[j] == "-") {
+                            parte++
+                        } else {
+                            nombre += punto[j];
+                        }
+                    } else if (parte == 3) {
+                        imagen += punto[j];
                     }
                 }
-                agregarPuntoDeInteres(mapa, parseFloat(longitud), parseFloat(latitud), nombre);
+                agregarPuntoDeInteres(mapa, parseFloat(longitud), parseFloat(latitud), nombre, imagen);
                 //console.log("Longitud:", longitud, "Latitud:", latitud, "Nombre:", nombre);
             }
             return listaPuntos;
@@ -143,26 +150,46 @@ function iniciarMapa() {
     });
 }
 
-// Función para agregar puntos de interés
-function agregarPuntoDeInteres(mapa, lat, lng, titulo) {
+function agregarPuntoDeInteres(mapa, lat, lng, titulo, imagen) {
     const marcador = new google.maps.marker.AdvancedMarkerElement({
         position: { lat, lng },
         map: mapa,
         title: titulo,
     });
 
-    // Evento click para mostrar InfoWindow
-    marcador.addListener("gmp-click", () => { // Cambiado de 'click' a 'gmp-click'
+    marcador.addListener("gmp-click", () => {
         if (!infoWindow) {
             infoWindow = new google.maps.InfoWindow();
         }
 
-        infoWindow.close();
-        infoWindow.setContent(`<h3>${titulo}</h3><p>Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>`);
+        const imgurID = imagen.replace(/\.(jpg|jpeg|png|gif)$/i, '');
+
+        const embedHtml = `
+            <div style="text-align: center;">
+                <h3>${titulo}</h3>
+                <blockquote class="imgur-embed-pub" lang="en" data-id="${imgurID}" data-context="false">
+                    <a href="https://imgur.com/${imgurID}">Ver en Imgur</a>
+                </blockquote>
+                <p>Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+            </div>
+        `;
+
+        infoWindow.setContent(embedHtml);
         infoWindow.open(mapa, marcador);
+
+        setTimeout(() => {
+            if (!document.querySelector('script[src="//s.imgur.com/min/embed.js"]')) {
+                const script = document.createElement('script');
+                script.src = "//s.imgur.com/min/embed.js";
+                script.async = true;
+                script.charset = "utf-8";
+                document.body.appendChild(script);
+            } else if (window.imgurEmbed && typeof window.imgurEmbed.process === "function") {
+                window.imgurEmbed.process();
+            }
+        }, 100);
     });
 }
-
 
 
 
